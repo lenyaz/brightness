@@ -1,3 +1,5 @@
-brightness
-veml7700
 *.o
+brightness
+.vscode/
+deploy.sh
+.DS_Store

@@ -1,6 +1,9 @@
 #include <wiringPiI2C.h>
 #include <iostream>
 #include <unistd.h>  // For sleep function
+#include "veml7700.h"
+#include <thread>
+#include <iomanip>  // Для std::fixed и std::setprecision
 
 // VEML7700 I2C address
 #define VEML7700_ADDR 0x10
@@ -25,37 +28,28 @@ float readAmbientLight(int fd) {
     return raw_data * 0.0576;
 }
 
-int main() {
-    int fd;
-
-    // Initialize I2C communication
-    fd = wiringPiI2CSetup(VEML7700_ADDR);
+void showAmbientLight() {
+    int fd = wiringPiI2CSetup(VEML7700_ADDR);
     if (fd == -1) {
-        std::cerr << "Failed to initialize I2C communication." << std::endl;
-        return 1;
+        throw std::runtime_error("Failed to initialize I2C communication.");
     }
 
-    // Configure the sensor: gain x1, integration time 100ms
+    // Configure the sensor
     int config = (ALS_GAIN_1 << 11) | (ALS_IT_100MS << 6);
     if (wiringPiI2CWriteReg16(fd, REG_ALS_CONF, config) < 0) {
-        std::cerr << "Failed to write to configuration register." << std::endl;
-        return 1;
+        throw std::runtime_error("Failed to configure light sensor.");
     }
 
-    // Wait for the first measurement to be ready
-    sleep(1);
+    // Wait for the first measurement
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     while (true) {
         try {
             float lux = readAmbientLight(fd);
-            std::cout << "Lux: " << lux << std::endl;
+            std::cout << "Ambient Light: " << std::fixed << std::setprecision(2) << lux << " lux" << std::endl;
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         } catch (const std::exception& e) {
-            std::cerr << e.what() << std::endl;
-            return 1;
+            throw;
         }
-        
-        sleep(1);
     }
-
-    return 0;
 }

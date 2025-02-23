@@ -1,6 +1,8 @@
 #pragma once
 #include <wiringPiI2C.h>
 #include <stdexcept>
+#include <chrono>
+#include <thread>
 
 // VEML7700 I2C address
 #define VEML7700_ADDR 0x10
@@ -13,4 +15,5 @@
 #define ALS_GAIN_1 0x00  // Gain x1
 #define ALS_IT_100MS 0x00  // Integration time 100ms
 
-float readAmbientLight(int fd); 
+float readAmbientLight(int fd);
+void showAmbientLight(); 

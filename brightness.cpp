@@ -5,6 +5,7 @@
 #include <string>
 #include <thread>
 #include "veml7700.h"
+#include <iomanip>
 
 const std::string BRIGHTNESS_PATH = "/sys/class/backlight/10-0045/brightness";
 
@@ -12,6 +13,45 @@ const std::string BRIGHTNESS_PATH = "/sys/class/backlight/10-0045/brightness";
 const int MAX_BRIGHTNESS = 255;
 const int MIN_BRIGHTNESS = 1;
 const int OFF_BRIGHTNESS = 0;
+
+// Constants for ambient light thresholds (in lux)
+const float MIN_LUX_THRESHOLD = 15.0f;
+const float MAX_LUX_THRESHOLD = 250.0f;
+
+// Constants for timing (in milliseconds)
+const int MEASUREMENT_INTERVAL_MS = 200;
+const int AUTO_TRANSITION_TIME_MS = 1000;
+
+// Easing functions for smooth transitions
+float easeInOutCubic(float t) {
+	if (t < 0.5f) {
+		return 4.0f * t * t * t;
+	} else {
+		float f = ((2.0f * t) - 2.0f);
+		return 0.5f * f * f * f + 1.0f;
+	}
+}
+
+// Квадратичная функция (более мягкая)
+float easeInOutQuad(float t) {
+	return t < 0.5f ? 2.0f * t * t : -1.0f + (4.0f - 2.0f * t) * t;
+}
+
+// Синусоидальная функция (очень плавная)
+float easeInOutSine(float t) {
+	return -0.5f * (std::cos(M_PI * t) - 1.0f);
+}
+
+// Экспоненциальная функция (резкая в начале и конце)
+float easeInOutExpo(float t) {
+	if (t == 0.0f || t == 1.0f) return t;
+	
+	if (t < 0.5f) {
+		return 0.5f * std::pow(2.0f, (20.0f * t) - 10.0f);
+	} else {
+		return 0.5f * (-std::pow(2.0f, (-20.0f * t) + 10.0f) + 2.0f);
+	}
+}
 
 // Function to read the current brightness
 int get_current_brightness() {
@@ -69,10 +109,18 @@ void transition_brightness(int current_brightness, int target_brightness, int tr
 	if (steps == 0) return;
 
 	double sleep_time_ms = static_cast<double>(transition_time_ms) / steps;
-	double brightness_step = (target_brightness - current_brightness) / static_cast<double>(steps);
+	int brightness_diff = target_brightness - current_brightness;
 
 	for (int i = 0; i <= steps; ++i) {
-		int new_brightness = std::round(current_brightness + i * brightness_step);
+		// Calculate progress (0.0 to 1.0)
+		float progress = static_cast<float>(i) / steps;
+		
+		// Apply easing function
+		float eased_progress = easeInOutQuad(progress);
+		
+		// Calculate new brightness using eased progress
+		int new_brightness = std::round(current_brightness + brightness_diff * eased_progress);
+		
 		set_brightness(new_brightness);
 		std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(sleep_time_ms)));
 	}
@@ -81,13 +129,14 @@ void transition_brightness(int current_brightness, int target_brightness, int tr
 	set_brightness(target_brightness);
 }
 
-// Function to convert lux to brightness (5 lux -> 1, 100 lux -> 255)
+// Function to convert lux to brightness
 int luxToBrightness(float lux) {
-	if (lux <= 5.0f) return MIN_BRIGHTNESS;
-	if (lux >= 100.0f) return MAX_BRIGHTNESS;
+	if (lux <= MIN_LUX_THRESHOLD) return MIN_BRIGHTNESS;
+	if (lux >= MAX_LUX_THRESHOLD) return MAX_BRIGHTNESS;
 	
-	// Linear interpolation between 5 lux and 100 lux
-	float brightness = ((lux - 5.0f) / (100.0f - 5.0f)) * (MAX_BRIGHTNESS - MIN_BRIGHTNESS) + MIN_BRIGHTNESS;
+	// Linear interpolation between min and max thresholds
+	float brightness = ((lux - MIN_LUX_THRESHOLD) / (MAX_LUX_THRESHOLD - MIN_LUX_THRESHOLD)) 
+		* (MAX_BRIGHTNESS - MIN_BRIGHTNESS) + MIN_BRIGHTNESS;
 	return static_cast<int>(std::round(brightness));
 }
 
@@ -109,16 +158,27 @@ void auto_brightness_mode() {
 	// Wait for the first measurement
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-	try {
-		float lux = readAmbientLight(fd);
-		int target_brightness = luxToBrightness(lux);
-		int current_brightness = get_current_brightness();
-		
-		// Use a 1-second transition for auto-brightness
-		transition_brightness(current_brightness, target_brightness, 1000);
-	} catch (const std::exception& e) {
-		std::cerr << "Error reading light sensor: " << e.what() << std::endl;
-		std::terminate();
+	std::cout << "Auto-brightness daemon started. Press Ctrl+C to stop." << std::endl;
+
+	while (true) {
+		try {
+			float lux = readAmbientLight(fd);
+			int target_brightness = luxToBrightness(lux);
+			int current_brightness = get_current_brightness();
+			
+			std::cout << "Ambient Light: " << std::fixed << std::setprecision(2) 
+					  << lux << " lux, Setting brightness to: " << target_brightness << std::endl;
+			
+			// Use a shorter transition for continuous mode
+			transition_brightness(current_brightness, target_brightness, AUTO_TRANSITION_TIME_MS);
+			
+			// Wait before next measurement
+			std::this_thread::sleep_for(std::chrono::milliseconds(MEASUREMENT_INTERVAL_MS));
+			
+		} catch (const std::exception& e) {
+			std::cerr << "Error reading light sensor: " << e.what() << std::endl;
+			std::terminate();
+		}
 	}
 }
 
@@ -128,10 +188,21 @@ int main(int argc, char* argv[]) {
 	if (argc < 2) {
 		std::cerr << "Usage: " << argv[0] << " <target_brightness> [transition_time_ms]" << std::endl;
 		std::cerr << "   or: " << argv[0] << " --auto" << std::endl;
+		std::cerr << "   or: " << argv[0] << " --showlux" << std::endl;
 		return 1;
 	}
 
 	std::string arg1(argv[1]);
+	if (arg1 == "--showlux") {
+		try {
+			showAmbientLight();
+		} catch (const std::exception& e) {
+			std::cerr << "Error: " << e.what() << std::endl;
+			return 1;
+		}
+		return 0;
+	}
+
 	if (arg1 == "--auto") {
 		auto_brightness_mode();
 		return 0;
