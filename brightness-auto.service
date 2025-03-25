@@ -1,0 +1,25 @@
+[Unit]
+Description=Auto Brightness Control Service
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/root/brightness/brightness --auto
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Security settings
+ProtectSystem=strict
+ReadWritePaths=/sys/class/backlight/10-0045
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+ProtectKernelModules=true
+PrivateTmp=true
+RestrictSUIDSGID=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target 
