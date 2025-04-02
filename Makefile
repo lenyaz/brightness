@@ -6,7 +6,7 @@ CXX = g++
 WIRINGPI = -lwiringPi
 CXXFLAGS += -Wall -Wextra
 
-.PHONY: all o3 test clean test-auto test-manual
+.PHONY: all o3 test clean test-auto test-manual install uninstall
 
 all: brightness
 
@@ -26,6 +26,15 @@ test: test-auto test-manual
 
 clean:
 	rm -f brightness
+	rm -f /opt/brightness/brightness
+
+install: brightness
+	mkdir -p /opt/brightness
+	cp ./brightness /opt/brightness/brightness
+	chmod +x /opt/brightness/brightness
+	./add-systemd-service.sh
+
+uninstall: clean
 
 # Run make with the maximum number of processes
 .DEFAULT_GOAL := all

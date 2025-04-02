@@ -4,7 +4,7 @@ After=multi-user.target
 
 [Service]
 Type=simple
-ExecStart=/root/brightness/brightness --auto
+ExecStart=/opt/brightness/brightness --auto
 Restart=on-failure
 RestartSec=5
 StandardOutput=journal
