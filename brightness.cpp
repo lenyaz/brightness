@@ -18,19 +18,6 @@ const int OFF_BRIGHTNESS = 0;
 const float MIN_LUX_THRESHOLD = 15.0f;
 const float MAX_LUX_THRESHOLD = 250.0f;
 
-// Constants for timing (in milliseconds)
-const int MEASUREMENT_INTERVAL_MS = 200;
-const int AUTO_TRANSITION_TIME_MS = 1000;
-
-// Easing functions for smooth transitions
-float easeInOutCubic(float t) {
-	if (t < 0.5f) {
-		return 4.0f * t * t * t;
-	} else {
-		float f = ((2.0f * t) - 2.0f);
-		return 0.5f * f * f * f + 1.0f;
-	}
-}
 
 // Квадратичная функция (более мягкая)
 float easeInOutQuad(float t) {
