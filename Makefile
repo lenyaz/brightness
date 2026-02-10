@@ -13,7 +13,7 @@ all: brightness
 o3: CXXFLAGS += -O3
 o3: brightness
 
-brightness: brightness.cpp veml7700.cpp
+brightness: brightness.cpp veml7700.cpp config.cpp brightness_backend.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(WIRINGPI)
 
 test-auto: all

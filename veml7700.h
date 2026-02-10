@@ -15,5 +15,7 @@
 #define ALS_GAIN_1 0x00  // Gain x1
 #define ALS_IT_100MS 0x00  // Integration time 100ms
 
+struct Config;
+
 float readAmbientLight(int fd);
-void showAmbientLight(); 
+void showAmbientLight(const Config& cfg);

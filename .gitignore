@@ -1,5 +1,6 @@
 *.o
 brightness
 .vscode/
+.idea/
 deploy.sh
 .DS_Store
