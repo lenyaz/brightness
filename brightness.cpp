@@ -122,6 +122,12 @@ void auto_brightness_mode() {
 	}
 }
 
+static void print_usage(const char* argv0) {
+	std::cerr << "Usage: " << argv0 << " [--config <path>] <target_brightness> [transition_time_ms]" << std::endl;
+	std::cerr << "   or: " << argv0 << " [--config <path>] --auto" << std::endl;
+	std::cerr << "   or: " << argv0 << " [--config <path>] --showlux" << std::endl;
+}
+
 //Usage: ./brightness <target_brightness> <transition_time_ms> (e.g. ./brightness 255 1000)
 //       ./brightness --auto
 int main(int argc, char* argv[]) {
