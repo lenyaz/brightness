@@ -18,6 +18,8 @@ struct Config {
 
     int measurement_interval_ms = 200;
     int auto_transition_time_ms = 1000;
+
+    float boost_coef = 0.077;
 };
 
 // Loads config from INI-style file. Missing file -> std::nullopt (use defaults).

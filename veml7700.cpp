@@ -17,7 +17,7 @@
 #define ALS_GAIN_1 0x00  // Gain x1
 #define ALS_IT_100MS 0x00  // Integration time 100ms
 
-float readAmbientLight(int fd) {
+float readAmbientLight(int fd, const Config& cfg) {
     // Read raw ALS data (16-bit)
     int raw_data = wiringPiI2CReadReg16(fd, REG_ALS_DATA);
     if (raw_data < 0) {
@@ -26,7 +26,7 @@ float readAmbientLight(int fd) {
 
     // Convert raw data to lux
     // For gain x1 and integration time 100ms, lux = raw_data * 0.0576
-    return raw_data * 0.0576;
+    return raw_data * cfg.boost_coef;
 }
 
 void showAmbientLight(const Config& cfg) {
