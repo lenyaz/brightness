@@ -24,53 +24,6 @@ float easeInOutQuad(float t) {
 	return t < 0.5f ? 2.0f * t * t : -1.0f + (4.0f - 2.0f * t) * t;
 }
 
-// Синусоидальная функция (очень плавная)
-float easeInOutSine(float t) {
-	return -0.5f * (std::cos(M_PI * t) - 1.0f);
-}
-
-// Экспоненциальная функция (резкая в начале и конце)
-float easeInOutExpo(float t) {
-	if (t == 0.0f || t == 1.0f) return t;
-	
-	if (t < 0.5f) {
-		return 0.5f * std::pow(2.0f, (20.0f * t) - 10.0f);
-	} else {
-		return 0.5f * (-std::pow(2.0f, (-20.0f * t) + 10.0f) + 2.0f);
-	}
-}
-
-// Function to read the current brightness
-int get_current_brightness() {
-	std::ifstream brightness_file(BRIGHTNESS_PATH);
-	int brightness = 0;
-	if (brightness_file.is_open()) {
-		brightness_file >> brightness;
-		brightness_file.close();
-	}
-	else {
-		std::cerr << "Error: Unable to read brightness! :(" << std::endl;
-
-		std::cerr << "Bailing out..." << std::endl;
-		std::terminate();
-	}
-	return brightness;
-}
-
-// Function to set the brightness
-void set_brightness(int value) {
-	std::ofstream brightness_file(BRIGHTNESS_PATH);
-	if (brightness_file.is_open()) {
-		brightness_file << value;
-		brightness_file.close();
-	}
-	else {
-		std::cerr << "Error: Unable to set brightness! ;(" << std::endl;
-
-		std::cerr << "Bailing out..." << std::endl;
-		std::terminate();
-	}
-}
 
 // Function to parse brightness argument
 int parse_brightness_argument(const std::string& arg) {
